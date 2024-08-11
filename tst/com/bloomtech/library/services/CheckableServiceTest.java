@@ -2,12 +2,10 @@ package com.bloomtech.library.services;
 
 import com.bloomtech.library.exceptions.CheckableNotFoundException;
 import com.bloomtech.library.exceptions.ResourceExistsException;
-import com.bloomtech.library.models.Library;
 import com.bloomtech.library.models.checkableTypes.*;
 import com.bloomtech.library.repositories.CheckableRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -19,12 +17,18 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class CheckableServiceTest {
 
     //TODO: Inject dependencies and mocks
+
+    @MockBean
+    private CheckableRepository checkableRepository;
+
+    @Autowired
+    private CheckableService checkableService;
 
     private List<Checkable> checkables;
 
@@ -48,4 +52,66 @@ public class CheckableServiceTest {
     }
 
     //TODO: Write Unit Tests for all CheckableService methods and possible Exceptions
+    @Test
+    void testGetAll() {
+        when(checkableRepository.findAll()).thenReturn(checkables);
+
+        List<Checkable> foundCheckables = checkableService.getAll();
+
+        assertEquals(8, foundCheckables.size());
+        verify(checkableRepository, times(1)).findAll();
+    }
+
+    @Test
+    void testGetByIsbn() {
+        when(checkableRepository.findByIsbn("1-0")).thenReturn(Optional.of(checkables.get(0)));
+
+        Checkable found = checkableService.getByIsbn("1-0");
+
+        assertEquals("1-0", found.getIsbn());
+        assertEquals("The White Whale", found.getTitle());
+        verify(checkableRepository, times(1)).findByIsbn("1-0");
+    }
+
+    @Test
+    void testGetByIsbn_NotFound() {
+        when(checkableRepository.findByIsbn("1-0")).thenReturn(Optional.empty());
+
+        assertThrows(CheckableNotFoundException.class, () -> checkableService.getByIsbn("1-0"));
+        verify(checkableRepository, times(1)).findByIsbn("1-0");
+    }
+
+    @Test
+    void testGetByType() {
+        when(checkableRepository.findByType(Media.class)).thenReturn(Optional.of(checkables.get(0)));
+
+        Checkable found = checkableService.getByType(Media.class);
+
+        assertEquals(Media.class, found.getClass());
+        verify(checkableRepository, times(1)).findByType(Media.class);
+    }
+
+    @Test
+    void testGetByType_NotFound() {
+        when(checkableRepository.findByType(Media.class)).thenReturn(Optional.empty());
+
+        assertThrows(CheckableNotFoundException.class, () -> checkableService.getByType(Media.class));
+        verify(checkableRepository, times(1)).findByType(Media.class);
+    }
+    @Test
+    void testSave() {
+        when(checkableRepository.findAll()).thenReturn(new ArrayList<>());
+        //when(checkableRepository.save(any(Checkable.class))).thenReturn(checkables.get(0));
+
+        checkableService.save(checkables.get(0));
+
+        verify(checkableRepository, times(1)).save(checkables.get(0));
+    }
+
+    @Test
+    void testMockBean() throws NoSuchFieldException {
+        assertTrue(Arrays.stream(CheckableServiceTest.class.getDeclaredField("checkableRepository").getAnnotations())
+                .anyMatch(a -> a.annotationType().equals(MockBean.class)));
+    }
+
 }
