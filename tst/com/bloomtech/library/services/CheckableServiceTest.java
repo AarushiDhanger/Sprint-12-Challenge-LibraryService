@@ -98,6 +98,20 @@ public class CheckableServiceTest {
         assertThrows(CheckableNotFoundException.class, () -> checkableService.getByType(Media.class));
         verify(checkableRepository, times(1)).findByType(Media.class);
     }
+
+    @Test
+    void testSave_ResourceExists() {
+        // Set up the repository to return a list that includes the checkable to be saved
+        when(checkableRepository.findAll()).thenReturn(checkables);
+
+        // Use the appropriate checkable to test
+        Checkable checkableToSave = checkables.get(0);  // Example checkable
+
+        // Ensure the correct exception is thrown
+        assertThrows(ResourceExistsException.class, () -> {
+            checkableService.save(checkableToSave);
+        });
+    }
     @Test
     void testSave() {
         when(checkableRepository.findAll()).thenReturn(new ArrayList<>());
